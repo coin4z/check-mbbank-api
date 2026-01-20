@@ -1,43 +1,41 @@
 export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success:false, message:'Method not allowed' });
+  }
+
+  const { provider, value, code, serial, key } = req.body;
+
+  // 🔐 KEY RIÊNG CHO ADMIN
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(401).json({ success:false, message:'Unauthorized' });
+  }
+
+  if (!provider || !value || !code || !serial) {
+    return res.json({ success:false, message:'Thiếu dữ liệu' });
+  }
+
   try {
-    const { provider, value, key } = req.query;
-
-    // 🔐 API KEY bảo vệ
-    if (key !== process.env.API_KEY) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized"
-      });
-    }
-
-    if (!provider || !value) {
-      return res.json({
-        success: false,
-        message: "Thiếu tham số"
-      });
-    }
-
-    const sheetApi =
-      process.env.SHEET_API_URL +
+    const url =
+      process.env.SHEET_ADD_URL +
       `?provider=${encodeURIComponent(provider)}` +
-      `&value=${encodeURIComponent(value)}`;
+      `&value=${value}` +
+      `&code=${encodeURIComponent(code)}` +
+      `&serial=${encodeURIComponent(serial)}`;
 
-    const response = await fetch(sheetApi, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json"
-      }
+    const r = await fetch(url);
+    const data = await r.json();
+
+    return res.json({
+      success: true,
+      message: 'Đã nạp thẻ vào kho',
+      data
     });
 
-    const data = await response.json();
-
-    return res.json(data);
-
-  } catch (err) {
+  } catch (e) {
     return res.status(500).json({
-      success: false,
-      message: "Lỗi server",
-      error: err.toString()
+      success:false,
+      message:'Lỗi server',
+      error: e.toString()
     });
   }
 }
