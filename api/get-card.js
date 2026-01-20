@@ -1,33 +1,37 @@
 export default async function handler(req, res) {
   try {
-    const { provider, value } = req.query;
+    const { provider, value, key } = req.query;
+
+    // 🔐 API KEY bảo vệ
+    if (key !== process.env.API_KEY) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
 
     if (!provider || !value) {
-      return res.status(400).json({
+      return res.json({
         success: false,
-        message: "Thiếu provider hoặc value"
+        message: "Thiếu tham số"
       });
     }
 
-    // URL Google Apps Script (lấy từ ENV)
-    const SHEET_API = process.env.SHEET_API_URL;
+    const sheetApi =
+      process.env.SHEET_API_URL +
+      `?provider=${encodeURIComponent(provider)}` +
+      `&value=${encodeURIComponent(value)}`;
 
-    if (!SHEET_API) {
-      return res.status(500).json({
-        success: false,
-        message: "Chưa cấu hình SHEET_API_URL"
-      });
-    }
+    const response = await fetch(sheetApi, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      }
+    });
 
-    const url =
-      SHEET_API +
-      "?provider=" + encodeURIComponent(provider) +
-      "&value=" + encodeURIComponent(value);
-
-    const response = await fetch(url);
     const data = await response.json();
 
-    return res.status(200).json(data);
+    return res.json(data);
 
   } catch (err) {
     return res.status(500).json({
