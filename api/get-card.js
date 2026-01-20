@@ -1,11 +1,6 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success:false, message:'Method not allowed' });
-  }
 
-  const { provider, value, code, serial, key } = req.body;
-
-  // ===== CORS (BẮT BUỘC) =====
+  // ===== CORS (BẮT BUỘC – ĐẶT ĐẦU FILE) =====
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -23,13 +18,22 @@ export default async function handler(req, res) {
     });
   }
 
+  // ===== BODY =====
+  const { provider, value, code, serial, key } = req.body;
+
   // 🔐 KEY RIÊNG CHO ADMIN
   if (key !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ success:false, message:'Unauthorized' });
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
   }
 
   if (!provider || !value || !code || !serial) {
-    return res.json({ success:false, message:'Thiếu dữ liệu' });
+    return res.json({
+      success: false,
+      message: "Thiếu dữ liệu"
+    });
   }
 
   try {
@@ -45,14 +49,14 @@ export default async function handler(req, res) {
 
     return res.json({
       success: true,
-      message: 'Đã nạp thẻ vào kho',
+      message: "Đã nạp thẻ vào kho",
       data
     });
 
   } catch (e) {
     return res.status(500).json({
-      success:false,
-      message:'Lỗi server',
+      success: false,
+      message: "Lỗi server",
       error: e.toString()
     });
   }
